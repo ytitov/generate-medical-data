@@ -6,6 +6,7 @@ import os
 
 parser = argparse.ArgumentParser(description='Wrap a notification inside the api gw request and send it')
 parser.add_argument('--out-dir', required=True, type=str, help='output directory')
+parser.add_argument('--config-file', default="synthea.properties", type=str, help='output directory')
 parser.add_argument('--build-image', default=False, action='store_true', help='Build image, only need to do this once')
 parser.add_argument('--num-patients', type=int, help='Total number of patients to generate', default=20)
 parser.add_argument('--gen-csv', default=False, action='store_true', help='Generate CSVs')
@@ -17,6 +18,8 @@ args = parser.parse_args()
 print(args)
 
 out_dir = os.path.abspath(args.out_dir)
+config_folder = os.path.abspath("./config")
+config_file = args.config_file 
 
 list_files = subprocess.run(["mkdir", out_dir, "-p"])
 subprocess.run(["chmod", "o+rw", out_dir])
@@ -27,7 +30,9 @@ docker_run = [
         "docker", "run", "-it", "--rm",
         #"-u $(id -u):$(id -g)",
         "--mount", f'type=bind,source={out_dir},target=/usr/src/synthea/outputdata',
+        "--mount", f'type=bind,source={config_folder},target=/syntheaconfig',
         "gen-synthea-data:latest", "./run_synthea",
+        "-c", f'/syntheaconfig/{config_file}',
         "-p", f'{args.num_patients}',
         "--exporter.baseDirectory", "./outputdata/",
         ]
@@ -52,6 +57,7 @@ if args.gen_fhir_us_core_ig is True:
     docker_run += ["true"]
 else:
     docker_run += ["false"]
+
 print(docker_run)
 subprocess.run(" ".join(docker_run), shell=True, check=True)
 print(f'You will need to run: `sudo chown $(whoami) {out_dir} -R` to fix permissions')
