@@ -9,9 +9,13 @@ parser.add_argument('--out-dir', required=True, type=str, help='output directory
 parser.add_argument('--config-file', default="synthea.properties", type=str, help='output directory')
 parser.add_argument('--build-image', default=False, action='store_true', help='Build image, only need to do this once')
 parser.add_argument('--num-patients', type=int, help='Total number of patients to generate', default=20)
+parser.add_argument('--seed', type=str, help='Seed from which to generate patients', default="21")
+parser.add_argument('--state', type=str, help='Patients state', default="Nebraska")
+parser.add_argument('--city', type=str, help='Patients city', default="Omaha")
 parser.add_argument('--gen-csv', default=False, action='store_true', help='Generate CSVs')
 parser.add_argument('--gen-ccda', default=False, action='store_true', help='Generate CCDA')
 parser.add_argument('--gen-cpcds', default=False, action='store_true', help='Generate CPCDS')
+parser.add_argument('--gen-fhir', default=False, action='store_true', help='Generate FHIR')
 parser.add_argument('--gen-fhir-us-core-ig', default=True, action='store_true', help='Generate using FHIR US Core IG')
 
 args = parser.parse_args()
@@ -33,9 +37,19 @@ docker_run = [
         "--mount", f'type=bind,source={config_folder},target=/syntheaconfig',
         "gen-synthea-data:latest", "./run_synthea",
         "-c", f'/syntheaconfig/{config_file}',
-        "-p", f'{args.num_patients}',
+        "-s", f'{args.seed}',
+        "-p", f'{args.num_patients} {args.state} {args.city}',
         "--exporter.baseDirectory", "./outputdata/",
         ]
+# check for FHIR
+docker_run += ["--exporter.fhir.export"]
+if args.gen_fhir is True:
+    docker_run += ["true"]
+else:
+    # also turn off contradicting features
+    args.gen_fhir_us_core_ig = False
+    docker_run += ["false"]
+
 docker_run += ["--exporter.csv.export"]
 if args.gen_csv is True:
     docker_run += ["true"]
