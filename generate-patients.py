@@ -5,6 +5,7 @@ import os
 
 
 parser = argparse.ArgumentParser(description='Wrap a notification inside the api gw request and send it')
+parser.add_argument('--cpus', default='.25', type=str, help='number of cpus to pass to docker')
 parser.add_argument('--out-dir', required=True, type=str, help='output directory')
 parser.add_argument('--config-file', default="synthea.properties", type=str, help='output directory')
 parser.add_argument('--build-image', default=False, action='store_true', help='Build image, only need to do this once')
@@ -35,6 +36,7 @@ docker_run = [
         #"-u $(id -u):$(id -g)",
         "--mount", f'type=bind,source={out_dir},target=/usr/src/synthea/outputdata',
         "--mount", f'type=bind,source={config_folder},target=/syntheaconfig',
+        f'--cpus="{args.cpus}"',
         "gen-synthea-data:latest", "./run_synthea",
         "-c", f'/syntheaconfig/{config_file}',
         "-s", f'{args.seed}',

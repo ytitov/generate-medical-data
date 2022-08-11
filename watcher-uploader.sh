@@ -16,6 +16,5 @@ inotifywait -m $FOLDER -e close_write --recursive |
     TARGET=$S3_BUCKET$PREFIX$file
     SOURCE=$dir$file
     echo $COUNT - $SOURCE "->" $TARGET
-    aws s3 cp $SOURCE $TARGET
-    sudo rm $SOURCE
+    aws s3 cp $SOURCE $TARGET && sudo rm $SOURCE &
   done
